@@ -1,19 +1,20 @@
-// run-report https://contest.yandex.ru/contest/43508/run-report/76186545/
+// run-report https://contest.yandex.ru/contest/43508/run-report/76787220/
 
 /*
-Р”Р°РЅРѕ С‡РёСЃР»Рѕ N <= 104 Рё РїРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅРѕСЃС‚СЊ С†РµР»С‹С… С‡РёСЃРµР» РёР· [-231..231] РґР»РёРЅРѕР№ N.
-РўСЂРµР±СѓРµС‚СЃСЏ РїРѕСЃС‚СЂРѕРёС‚СЊ Р±РёРЅР°СЂРЅРѕРµ РґРµСЂРµРІРѕ, Р·Р°РґР°РЅРЅРѕРµ РЅР°РёРІРЅС‹Рј РїРѕСЂСЏРґРєРѕРј РІСЃС‚Р°РІРєРё.
-Рў.Рµ., РїСЂРё РґРѕР±Р°РІР»РµРЅРёРё РѕС‡РµСЂРµРґРЅРѕРіРѕ С‡РёСЃР»Р° K РІ РґРµСЂРµРІРѕ СЃ РєРѕСЂРЅРµРј root,
-РµСЃР»Рё root->Key <= K, С‚Рѕ СѓР·РµР» K РґРѕР±Р°РІР»СЏРµС‚СЃСЏ РІ РїСЂР°РІРѕРµ РїРѕРґРґРµСЂРµРІРѕ root;
-РёРЅР°С‡Рµ РІ Р»РµРІРѕРµ РїРѕРґРґРµСЂРµРІРѕ root. Р’С‹РІРµРґРёС‚Рµ СЌР»РµРјРµРЅС‚С‹ РІ РїРѕСЂСЏРґРєРµ in-order (СЃР»РµРІР° РЅР°РїСЂР°РІРѕ).
-Р РµРєСѓСЂСЃРёСЏ Р·Р°РїСЂРµС‰РµРЅР°.
+Дано число N <= 104 и последовательность целых чисел из [-231..231] длиной N.
+Требуется построить бинарное дерево, заданное наивным порядком вставки.
+Т.е., при добавлении очередного числа K в дерево с корнем root,
+если root->Key <= K, то узел K добавляется в правое поддерево root;
+иначе в левое поддерево root. Выведите элементы в порядке in-order (слева направо).
+Рекурсия запрещена.
 */
 
 #include <stack>
 #include <iostream>
 #include <vector>
+#include <utility>
 
-// СЃС‚СЂСѓРєС‚СѓСЂР° СЏС‡РµР№РєРё Р±РёРЅР°СЂРЅРѕРіРѕ РґРµСЂРµРІР°
+// структура ячейки бинарного дерева
 struct BinaryTreeNode {
 	BinaryTreeNode(int inKey, BinaryTreeNode* inLeft, BinaryTreeNode* inRight);
 	~BinaryTreeNode();
@@ -21,80 +22,114 @@ struct BinaryTreeNode {
 	BinaryTreeNode* left;
 	BinaryTreeNode* right;
 };
-
-// РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ
-BinaryTreeNode::BinaryTreeNode(int inKey, BinaryTreeNode* inLeft, BinaryTreeNode* inRight) {
+BinaryTreeNode::BinaryTreeNode(int inKey, BinaryTreeNode* inLeft = nullptr, BinaryTreeNode* inRight = nullptr) {
 	key = inKey;
 	left = inLeft;
 	right = inRight;
 }
-
-// РґРµСЃС‚СЂСѓРєС‚РѕСЂ
 BinaryTreeNode::~BinaryTreeNode() {
-	delete left;
-	delete right;
+	// собираются ячейки для удаления обходом Post-Order, в конце nodesToDelete будет находится root. в конце функции освобождаем память для всех ячеек дерева в обходе Post-Order кроме root, так как после выхода из деструктора это сделается автоматически.
+	std::vector<BinaryTreeNode*> nodesToDelete;
+	std::stack<std::pair<BinaryTreeNode*, int>> postOrderDfsParameters;
+	postOrderDfsParameters.push({ this, 0 });
+	while (!postOrderDfsParameters.empty()) {
+		std::pair<BinaryTreeNode*, int> currentPostOrderDfsParameter = postOrderDfsParameters.top();
+		switch (currentPostOrderDfsParameter.second) {
+		case 0:
+			if (!currentPostOrderDfsParameter.first)
+				postOrderDfsParameters.pop();
+			else {
+				postOrderDfsParameters.top().second = 1;
+				postOrderDfsParameters.push({ currentPostOrderDfsParameter.first->left, 0 });
+			}
+			break;
+		case 1:
+			postOrderDfsParameters.top().second = 2;
+			postOrderDfsParameters.push({ currentPostOrderDfsParameter.first->right, 0 });
+			break;
+		case 2:
+			nodesToDelete.push_back(postOrderDfsParameters.top().first);
+			postOrderDfsParameters.pop();
+			break;
+		}
+	}
+	for (int i = 0; i < nodesToDelete.size() - 1; ++i)
+		free(nodesToDelete[i]);
 }
 
-// СЃС‚СЂСѓРєС‚СѓСЂР° РїР°СЂР°РјРµС‚СЂРѕРІ РґР»СЏ С„СѓРЅРєС†РёРё InOrderDFS РґР»СЏ Р·Р°РјРµРЅС‹ СЂРµРєСѓСЂСЃРёРё РЅР° С†РёРєР»
-struct InOrderDfsParameter {
-	InOrderDfsParameter(BinaryTreeNode* inBinaryTreeNode, int inSegment) {
-		binaryTreeNode = inBinaryTreeNode;
-		segment = inSegment;
-	}
+// структура параметров для функции InOrderDFS для замены рекурсии на цикл
+struct DfsParameter {
+	DfsParameter(BinaryTreeNode* inBinaryTreeNode, int inSegment);
 	BinaryTreeNode* binaryTreeNode;
 	int segment;
 };
-
-// РґРѕР±Р°РІР»РµРЅРёРµ СѓР·Р»Р°
-void AddNodeToBinaryTree(BinaryTreeNode* binaryTreeNode, int key) {
-	BinaryTreeNode* currentBinaryTreeNode = binaryTreeNode;
-	if (key >= currentBinaryTreeNode->key)
-		if (currentBinaryTreeNode->right)
-			AddNodeToBinaryTree(currentBinaryTreeNode->right, key);
-		else
-			currentBinaryTreeNode->right = new BinaryTreeNode(key, nullptr, nullptr);
-	else
-		if (currentBinaryTreeNode->left)
-			AddNodeToBinaryTree(currentBinaryTreeNode->left, key);
-		else
-			currentBinaryTreeNode->left = new BinaryTreeNode(key, nullptr, nullptr);
+DfsParameter::DfsParameter(BinaryTreeNode* inBinaryTreeNode, int inSegment) {
+	binaryTreeNode = inBinaryTreeNode;
+	segment = inSegment;
 }
 
-// С„СѓРЅРєС†РёСЏ РѕР±С…РѕРґР° РґРµСЂРµРІР°, РІРѕР·РІСЂР°С‰Р°РµС‚ РєР»СЋС‡Рё РІ РЅСѓР¶РЅРѕРј РїРѕСЂСЏРґРєРµ
+// добавление узла
+void AddNodeToBinaryTree(int key, BinaryTreeNode* root) {
+	if (!root) {
+		root = new BinaryTreeNode(key);
+		return;
+	}
+	BinaryTreeNode* currentBinaryTreeNode = root;
+	while (true) {
+		if (currentBinaryTreeNode->key > key) {
+			if (currentBinaryTreeNode->left != nullptr)
+				currentBinaryTreeNode = currentBinaryTreeNode->left;
+			else {
+				currentBinaryTreeNode->left = new BinaryTreeNode(key);
+				break;
+			}
+		}
+		else {
+			if (currentBinaryTreeNode->right != nullptr)
+				currentBinaryTreeNode = currentBinaryTreeNode->right;
+			else {
+				currentBinaryTreeNode->right = new BinaryTreeNode(key);
+				break;
+			}
+		}
+	}
+}
+// функция обхода дерева, возвращает ключи в нужном порядке
 std::vector<int> GetBinaryTreeInOrderDFS(BinaryTreeNode* binaryTreeNode) {
 	std::vector<int> binaryTreeInOrderDFS;
-	std::stack<InOrderDfsParameter> InOrderDfsParameters;
-	InOrderDfsParameters.push({ binaryTreeNode, 0 });
-	while (!InOrderDfsParameters.empty()) {
-		InOrderDfsParameter currentInOrderDfsParameter = InOrderDfsParameters.top();
+	std::stack<DfsParameter> inOrderDfsParameters;
+	inOrderDfsParameters.push({ binaryTreeNode, 0 });
+	while (!inOrderDfsParameters.empty()) {
+		DfsParameter currentInOrderDfsParameter = inOrderDfsParameters.top();
 		switch (currentInOrderDfsParameter.segment) {
 		case 0:
 			if (!currentInOrderDfsParameter.binaryTreeNode)
-				InOrderDfsParameters.pop();
+				inOrderDfsParameters.pop();
 			else {
-				InOrderDfsParameters.top().segment = 1;
-				InOrderDfsParameters.push({ currentInOrderDfsParameter.binaryTreeNode->left, 0 });
+				inOrderDfsParameters.top().segment = 1;
+				inOrderDfsParameters.push({ currentInOrderDfsParameter.binaryTreeNode->left, 0 });
 			}
 			break;
 		case 1:
 			binaryTreeInOrderDFS.push_back(currentInOrderDfsParameter.binaryTreeNode->key);
-			InOrderDfsParameters.top().segment = 2;
-			InOrderDfsParameters.push({ currentInOrderDfsParameter.binaryTreeNode->right, 0 });
+			inOrderDfsParameters.top().segment = 2;
+			inOrderDfsParameters.push({ currentInOrderDfsParameter.binaryTreeNode->right, 0 });
 			break;
 		case 2:
-			InOrderDfsParameters.pop();
+			inOrderDfsParameters.pop();
 			break;
 		}
 	}
 	return binaryTreeInOrderDFS;
 }
-
-// РїРµСЂРµРіСЂСѓР·РєР° С„СѓРЅРєС†РёРё РѕР±С…РѕРґР° РґРµСЂРµРІР° РґР»СЏ С‚РѕРіРѕ, С‡С‚РѕР±С‹ РёР·РЅР°С‡Р°Р»СЊРЅРѕ РµРіРѕ РїРѕСЃС‚СЂРѕРёС‚СЊ
+// перегрузка функции обхода дерева для того, чтобы изначально его построить
 std::vector<int> GetBinaryTreeInOrderDFS(int nodeCount, int* keys) {
-	BinaryTreeNode* root = new BinaryTreeNode(keys[0], nullptr, nullptr);
+	BinaryTreeNode* root = new BinaryTreeNode(keys[0]);
 	for (int i = 1; i < nodeCount; ++i)
-		AddNodeToBinaryTree(root, keys[i]);
-	return GetBinaryTreeInOrderDFS(root);
+		AddNodeToBinaryTree(keys[i], root);
+	std::vector<int> binaryTreeInOrderDFS = GetBinaryTreeInOrderDFS(root);
+	delete root;
+	return binaryTreeInOrderDFS;
 }
 
 int main() {
