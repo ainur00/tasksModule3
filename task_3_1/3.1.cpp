@@ -1,15 +1,15 @@
-// run-report https://contest.yandex.ru/contest/43508/run-report/80030539/
+// run-report https://contest.yandex.ru/contest/43508/run-report/80061224/
 
 /*
-В одной военной части решили построить в одну шеренгу по росту. 
-Т.к. часть была далеко не образцовая, то солдаты часто приходили не вовремя, 
-а то их и вовсе приходилось выгонять из шеренги за плохо начищенные сапоги. 
-Однако солдаты в процессе прихода и ухода должны были всегда быть выстроены по росту – сначала самые высокие, 
-а в конце – самые низкие. За расстановку солдат отвечал прапорщик, 
-который заметил интересную особенность – все солдаты в части разного роста. 
-Ваша задача состоит в том, чтобы помочь прапорщику правильно расставлять солдат, 
-а именно для каждого приходящего солдата указывать, 
-перед каким солдатом в строе он должен становится. 
+В одной военной части решили построить в одну шеренгу по росту.
+Т.к. часть была далеко не образцовая, то солдаты часто приходили не вовремя,
+а то их и вовсе приходилось выгонять из шеренги за плохо начищенные сапоги.
+Однако солдаты в процессе прихода и ухода должны были всегда быть выстроены по росту – сначала самые высокие,
+а в конце – самые низкие. За расстановку солдат отвечал прапорщик,
+который заметил интересную особенность – все солдаты в части разного роста.
+Ваша задача состоит в том, чтобы помочь прапорщику правильно расставлять солдат,
+а именно для каждого приходящего солдата указывать,
+перед каким солдатом в строе он должен становится.
 Требуемая скорость выполнения команды - O(log n).
 */
 
@@ -40,7 +40,7 @@ AVLTreeNode::~AVLTreeNode() {
 	delete right;
 }
 int AVLTreeNode::GetHeight(AVLTreeNode* currentAVLTreeNode) {
-	return (currentAVLTreeNode ? currentAVLTreeNode->height : 0);
+	return currentAVLTreeNode ? currentAVLTreeNode->height : 0;
 }
 int AVLTreeNode::GetCount(AVLTreeNode* currentAVLTreeNode) {
 	return (currentAVLTreeNode ? currentAVLTreeNode->count : 0);
@@ -59,20 +59,18 @@ int AVLTreeNode::GetBalance(AVLTreeNode* currentAVLTreeNode) {
 
 // класс для работы с AVL деревом
 class AVLTree {
-	public:
-		~AVLTree();
-		int Add(int key);
-		bool Delete(int key);
-		bool DeleteAt(int stat);
-	private:
-		AVLTreeNode* root = nullptr;
-		void RotateLeft(AVLTreeNode*& currentAVLTreeNode);
-		void RotateRight(AVLTreeNode*& currentAVLTreeNode);
-		void FixBalance(AVLTreeNode*& currentAVLTreeNode);
-		int Add(int key, AVLTreeNode*& currentAVLTreeNode);
-		int GetMinKeyAndDeleteMin(AVLTreeNode*& currentAVLTreeNode);
-		bool Delete(int key, AVLTreeNode*& currentAVLTreeNode);
-		bool DeleteAt(int stat, AVLTreeNode*& currentAVLTreeNode);
+public:
+	~AVLTree();
+	int Add(int key);
+	bool DeleteAt(int stat);
+private:
+	AVLTreeNode* root = nullptr;
+	void RotateLeft(AVLTreeNode*& currentAVLTreeNode);
+	void RotateRight(AVLTreeNode*& currentAVLTreeNode);
+	void FixBalance(AVLTreeNode*& currentAVLTreeNode);
+	int Add(int key, AVLTreeNode*& currentAVLTreeNode);
+	int GetMinKeyAndDeleteMin(AVLTreeNode*& currentAVLTreeNode);
+	bool DeleteAt(int stat, AVLTreeNode*& currentAVLTreeNode);
 };
 AVLTree::~AVLTree() {
 	delete root;
@@ -81,9 +79,6 @@ int AVLTree::Add(int key) {
 	// особенность задачи, возвращаем статистику с конца
 	int avlTreeNodeCount = AVLTreeNode::GetCount(root);
 	return avlTreeNodeCount - Add(key, root);
-}
-bool AVLTree::Delete(int key) {
-	return Delete(key, root);
 }
 bool AVLTree::DeleteAt(int stat) {
 	// особенность задачи, удаляем статистику с конца
@@ -96,8 +91,6 @@ void AVLTree::RotateLeft(AVLTreeNode*& currentAVLTreeNode) {
 	currentAVLTreeNode->right = currentAVLTreeNodeRight->left;
 	currentAVLTreeNodeRight->left = currentAVLTreeNode;
 	currentAVLTreeNode = currentAVLTreeNodeRight;
-	AVLTreeNode::UpdateHeight(currentAVLTreeNode);
-	AVLTreeNode::UpdateCount(currentAVLTreeNode);
 	if (currentAVLTreeNode->left) {
 		AVLTreeNode::UpdateHeight(currentAVLTreeNode->left);
 		AVLTreeNode::UpdateCount(currentAVLTreeNode->left);
@@ -106,14 +99,14 @@ void AVLTree::RotateLeft(AVLTreeNode*& currentAVLTreeNode) {
 		AVLTreeNode::UpdateHeight(currentAVLTreeNode->right);
 		AVLTreeNode::UpdateCount(currentAVLTreeNode->right);
 	}
+	AVLTreeNode::UpdateHeight(currentAVLTreeNode);
+	AVLTreeNode::UpdateCount(currentAVLTreeNode);
 }
 void AVLTree::RotateRight(AVLTreeNode*& currentAVLTreeNode) {
 	AVLTreeNode* currentAVLTreeNodeLeft = currentAVLTreeNode->left;
 	currentAVLTreeNode->left = currentAVLTreeNodeLeft->right;
 	currentAVLTreeNodeLeft->right = currentAVLTreeNode;
 	currentAVLTreeNode = currentAVLTreeNodeLeft;
-	AVLTreeNode::UpdateHeight(currentAVLTreeNode);
-	AVLTreeNode::UpdateCount(currentAVLTreeNode);
 	if (currentAVLTreeNode->left) {
 		AVLTreeNode::UpdateHeight(currentAVLTreeNode->left);
 		AVLTreeNode::UpdateCount(currentAVLTreeNode->left);
@@ -122,6 +115,8 @@ void AVLTree::RotateRight(AVLTreeNode*& currentAVLTreeNode) {
 		AVLTreeNode::UpdateHeight(currentAVLTreeNode->right);
 		AVLTreeNode::UpdateCount(currentAVLTreeNode->right);
 	}
+	AVLTreeNode::UpdateHeight(currentAVLTreeNode);
+	AVLTreeNode::UpdateCount(currentAVLTreeNode);
 }
 void AVLTree::FixBalance(AVLTreeNode*& currentAVLTreeNode) {
 	if (!currentAVLTreeNode)
@@ -158,9 +153,9 @@ int AVLTree::GetMinKeyAndDeleteMin(AVLTreeNode*& currentAVLTreeNode) {
 	if (!currentAVLTreeNode->left) {
 		minAVLTreeNodeKey = currentAVLTreeNode->key;
 		if (currentAVLTreeNode->right) {
-			AVLTreeNode nodeToSave = *currentAVLTreeNode->right;
+			AVLTreeNode* nodeToSave = new AVLTreeNode(*currentAVLTreeNode->right);
 			delete currentAVLTreeNode;
-			currentAVLTreeNode = new AVLTreeNode(nodeToSave);
+			currentAVLTreeNode = nodeToSave;
 		}
 		else
 			currentAVLTreeNode = nullptr;
@@ -176,43 +171,16 @@ int AVLTree::GetMinKeyAndDeleteMin(AVLTreeNode*& currentAVLTreeNode) {
 	AVLTreeNode::UpdateCount(currentAVLTreeNode);
 	return minAVLTreeNodeKey;
 }
-bool AVLTree::Delete(int key, AVLTreeNode*& currentAVLTreeNode) {
-	bool isDeleted = false;
-	if (!currentAVLTreeNode)
-		isDeleted = false;
-	else if (key == currentAVLTreeNode->key) {
-		if ((!currentAVLTreeNode->left) || (!currentAVLTreeNode->right)) {
-			if ((currentAVLTreeNode->left) || (currentAVLTreeNode->right)) {
-				AVLTreeNode nodeToSave = *(currentAVLTreeNode->left ? currentAVLTreeNode->left : currentAVLTreeNode->right);
-				delete currentAVLTreeNode;
-				currentAVLTreeNode = new AVLTreeNode(nodeToSave);
-			}
-			else
-				currentAVLTreeNode = nullptr;
-		}
-		else
-			currentAVLTreeNode->key = GetMinKeyAndDeleteMin(currentAVLTreeNode->right);
-		isDeleted = true;
-	}
-	else if (key < currentAVLTreeNode->key)
-		isDeleted = Delete(key, currentAVLTreeNode->left);
-	else
-		isDeleted = Delete(key, currentAVLTreeNode->right);
-	FixBalance(currentAVLTreeNode);
-	AVLTreeNode::UpdateHeight(currentAVLTreeNode);
-	AVLTreeNode::UpdateCount(currentAVLTreeNode);
-	return isDeleted;
-}
 bool AVLTree::DeleteAt(int stat, AVLTreeNode*& currentAVLTreeNode) {
 	bool isDeleted = false;
 	if (stat >= AVLTreeNode::GetCount(currentAVLTreeNode))
-		return isDeleted;
-	else if (stat == AVLTreeNode::GetCount(currentAVLTreeNode->left)) {
+		return false;
+	if (stat == AVLTreeNode::GetCount(currentAVLTreeNode->left)) {
 		if ((!currentAVLTreeNode->left) || (!currentAVLTreeNode->right)) {
 			if ((currentAVLTreeNode->left) || (currentAVLTreeNode->right)) {
-				AVLTreeNode nodeToSave = *(currentAVLTreeNode->left ? currentAVLTreeNode->left : currentAVLTreeNode->right);
+				AVLTreeNode* nodeToSave = new AVLTreeNode(currentAVLTreeNode->left ? *currentAVLTreeNode->left : *currentAVLTreeNode->right);
 				delete currentAVLTreeNode;
-				currentAVLTreeNode = new AVLTreeNode(nodeToSave);
+				currentAVLTreeNode = nodeToSave;
 			}
 			else
 				currentAVLTreeNode = nullptr;
